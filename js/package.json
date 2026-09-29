@@ -1,0 +1,33 @@
+{
+  "name": "@kominfo-kabtang/portal-sso-client",
+  "version": "1.0.0",
+  "description": "Client login SSO Portal ASN Kabupaten Tangerang untuk backend Node.js (Express, Fastify, Next.js route handler, dll).",
+  "keywords": ["sso", "oauth2", "passport", "portal-asn", "tangerangkab", "kominfo-kabtang"],
+  "license": "MIT",
+  "author": "Fachran Nazarullah <fachran.nazarullah@gmail.com>",
+  "homepage": "https://github.com/kominfo-kabtang/portal-sso-client/tree/main/js#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kominfo-kabtang/portal-sso-client.git",
+    "directory": "js"
+  },
+  "bugs": "https://github.com/kominfo-kabtang/portal-sso-client/issues",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "files": ["src", "README.md", "LICENSE"],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

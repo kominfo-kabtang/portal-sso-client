@@ -1,0 +1,91 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '7.4', laravel: '8.*', testbench: '6.*' }
+          - { php: '8.0', laravel: '9.*', testbench: '7.*' }
+          - { php: '8.1', laravel: '10.*', testbench: '8.*' }
+          - { php: '8.2', laravel: '11.*', testbench: '9.*' }
+          - { php: '8.3', laravel: '11.*', testbench: '9.*' }
+
+    name: PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php: ${{ matrix.php }}
+          extensions: pdo_sqlite
+          coverage: none
+
+      - name: Lint (src, config, routes, examples)
+        run: find src config routes examples -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Install dependencies
+        run: |
+          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update --dev
+          composer update --prefer-dist --no-interaction
+
+      - name: Run tests
+        run: vendor/bin/phpunit
+
+  php-core-without-laravel:
+    runs-on: ubuntu-latest
+    name: PHP 7.4 - tanpa Laravel (CodeIgniter/native)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php: '7.4'
+          coverage: none
+
+      - name: Install tanpa dev dependencies
+        run: composer update --no-dev --prefer-dist --no-interaction
+
+      - name: Pastikan tidak ada komponen Laravel terpasang
+        run: test ! -d vendor/illuminate && test ! -d vendor/laravel
+
+      - name: Smoke test core
+        run: |
+          php -r '
+            require "vendor/autoload.php";
+            use KominfoKabtang\PortalSso\Core\{Config, SsoFlow, Session\ArraySessionStore};
+            $s = new ArraySessionStore();
+            $url = SsoFlow::create(new Config(["host" => "http://portal.local", "callback_url" => "https://app/callback"]), $s)->begin();
+            if (strpos($url, "http://portal.local/request?") !== 0 || !$s->get(SsoFlow::STATE_KEY)) { exit(1); }
+            echo "ok\n";
+          '
+
+  node:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18', '20', '22']
+
+    name: Node ${{ matrix.node }}
+
+    defaults:
+      run:
+        working-directory: js
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - run: npm test

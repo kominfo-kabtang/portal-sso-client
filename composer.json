@@ -1,0 +1,61 @@
+{
+    "name": "kominfo-kabtang/portal-sso-client",
+    "description": "Client login SSO Portal ASN Kabupaten Tangerang (Laravel Passport) untuk Laravel, CodeIgniter 3/4, dan PHP native.",
+    "keywords": ["laravel", "codeigniter", "sso", "oauth2", "passport", "portal-asn", "tangerangkab", "kominfo-kabtang"],
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/kominfo-kabtang/portal-sso-client",
+    "support": {
+        "issues": "https://github.com/kominfo-kabtang/portal-sso-client/issues",
+        "source": "https://github.com/kominfo-kabtang/portal-sso-client"
+    },
+    "authors": [
+        {
+            "name": "Fachran Nazarullah",
+            "email": "fachran.nazarullah@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.0|^7.0|^8.0|^9.0",
+        "phpunit/phpunit": "^9.5|^10.5"
+    },
+    "conflict": {
+        "laravel/framework": "<8.0 || >=12.0"
+    },
+    "suggest": {
+        "laravel/framework": "Laravel 8–11: rute, middleware, dan tombol login terpasang otomatis."
+    },
+    "autoload": {
+        "psr-4": {
+            "KominfoKabtang\\PortalSso\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "KominfoKabtang\\PortalSso\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "KominfoKabtang\\PortalSso\\PortalSsoServiceProvider"
+            ],
+            "aliases": {
+                "PortalSso": "KominfoKabtang\\PortalSso\\Facades\\PortalSso"
+            }
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
