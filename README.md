@@ -10,6 +10,7 @@ Client login SSO **Portal ASN Kabupaten Tangerang** (Laravel Passport). Pasang d
 | Laravel 8–11 | `composer require kominfo-kabtang/portal-sso-client` | [Laravel](#laravel). Rute, middleware, dan tombol terpasang otomatis |
 | CodeIgniter 4 | sama | [CodeIgniter 4](#codeigniter-4) |
 | CodeIgniter 3 | sama | [CodeIgniter 3](#codeigniter-3) |
+| CodeIgniter 2 (PHP 7.4+) | sama | [CodeIgniter 2](#codeigniter-2) |
 | PHP tanpa framework | sama | [PHP native](#php-native) |
 | Node.js (Express, Fastify, Next.js, NestJS) | `npm i @kominfo-kabtang/portal-sso-client` | [js/README.md](js/README.md) |
 | SPA (Vue, React) | Lewat backend | [SPA](#aplikasi-spa-vue-react) |
@@ -260,6 +261,16 @@ $route['sso/logout'] = 'sso/logout';
 ```
 
 CodeIgniter 3 harus berjalan di **PHP 7.4 ke atas**. Session CI3 disimpan di `$_SESSION`, jadi session bawaan core langsung cocok.
+
+### CodeIgniter 2
+
+Syaratnya CI2 sudah berjalan di **PHP 7.4 ke atas**. Di PHP 5.x paket ini tidak bisa dipasang. Perbedaannya dengan CI3:
+
+1. CI2 tidak punya `composer_autoload`. Tambahkan `require_once __DIR__.'/vendor/autoload.php';` di `index.php`, tepat sebelum `require_once BASEPATH.'core/CodeIgniter.php';`.
+2. Session CI2 tidak memakai `$_SESSION`. Contoh controller [`examples/codeigniter2/application/controllers/sso.php`](examples/codeigniter2/application/controllers/sso.php) menyertakan adaptor `Ci2SessionStore` untuk library session CI2.
+3. Set `$config['sess_use_database'] = TRUE` supaya token portal tidak tersimpan di cookie browser. Enkripsi cookie CI2 memerlukan mcrypt, yang tidak tersedia di PHP 7.2 ke atas, jadi jangan mengandalkannya. Set juga `$config['allow_get_array'] = TRUE`.
+
+File konfigurasi dan rutenya sama dengan CI3.
 
 ### PHP native
 

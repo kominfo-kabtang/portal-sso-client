@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+env:
+  # Composer 2.9+ menolak versi yang punya security advisory, termasuk semua
+  # Laravel 8. Matriks ini sengaja menguji versi lama, jadi blokir dimatikan di CI.
+  COMPOSER_NO_SECURITY_BLOCKING: 1
+
 jobs:
   php:
     runs-on: ubuntu-latest

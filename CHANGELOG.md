@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 - 2026-09-29
+
+- Contoh integrasi CodeIgniter 2 (PHP 7.4+) di `examples/codeigniter2/`, termasuk adaptor session `Ci2SessionStore`, beserta panduannya di README.
+- CI: install dependensi tidak lagi gagal di Composer 2.9+, yang memblokir versi Laravel 8 karena security advisory. Pengaturan ini hanya berlaku di CI dan tidak memengaruhi pemakai paket.
+
 ## 1.0.0 - 2026-09-29
 
 Paket Composer `kominfo-kabtang/portal-sso-client` (namespace `KominfoKabtang\PortalSso`) dan paket npm `@kominfo-kabtang/portal-sso-client`.
