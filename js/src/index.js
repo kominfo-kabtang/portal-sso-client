@@ -51,6 +51,7 @@ function safeEqual(a, b) {
 function configFromEnv(env = process.env, overrides = {}) {
   const pick = (name) => (filled(env[name]) ? env[name] : undefined);
   const config = {
+    mode: pick('SSO_MODE'),
     host: pick('SSO_HOST'),
     hostDomain: pick('SSO_HOST_DOMAIN'),
     clientId: pick('SSO_CLIENT_ID'),
@@ -66,6 +67,8 @@ function configFromEnv(env = process.env, overrides = {}) {
 
 /**
  * @param {object} options
+ * @param {'legacy'|'oauth'} [options.mode='legacy'] legacy: /request + /api/token-user.
+ *   oauth: OAuth2 standar (/oauth/authorize + /oauth/token) dengan client milik aplikasi.
  * @param {string} options.host         Portal untuk panggilan server (boleh IP internal).
  * @param {string} [options.hostDomain] Portal untuk redirect browser. Default: host.
  * @param {string} [options.clientId]
@@ -84,13 +87,17 @@ function createPortalSso(options = {}) {
   const timeoutMs = options.timeoutMs || 15000;
   const logoutTimeoutMs = options.logoutTimeoutMs || 5000;
   const fetchFn = options.fetch || globalThis.fetch;
+  // Nilai selain "oauth" dianggap "legacy" agar aplikasi lama tidak berubah perilaku.
+  const oauth = String(options.mode || '').trim().toLowerCase() === 'oauth';
   const logger = options.logger || (() => {});
 
   if (typeof fetchFn !== 'function') {
     throw new Error('fetch tidak tersedia. Pakai Node.js 18+ atau isi opsi "fetch".');
   }
 
-  const isConfigured = () => host !== '' && hostDomain !== '';
+  // Mode oauth memakai client milik aplikasi, jadi client_id dan client_secret wajib.
+  const isConfigured = () => host !== '' && hostDomain !== ''
+    && (!oauth || (filled(options.clientId) && filled(options.clientSecret)));
 
   function authorizeUrl(state) {
     const params = new URLSearchParams();
@@ -100,10 +107,10 @@ function createPortalSso(options = {}) {
       response_type: 'code',
       scope: scopes,
       state,
-      prompt: '1',
     };
+    if (!oauth) values.prompt = '1';
     Object.keys(values).forEach((key) => filled(values[key]) && params.append(key, String(values[key])));
-    return `${hostDomain}/request?${params.toString()}`;
+    return `${hostDomain}${oauth ? '/oauth/authorize' : '/request'}?${params.toString()}`;
   }
 
   async function send(method, path, { token, form, timeout = timeoutMs } = {}) {
@@ -137,7 +144,16 @@ function createPortalSso(options = {}) {
   }
 
   // Parameter "url" sengaja tidak dikirim (kasus SSRF di portal).
-  const exchangeCode = (code, state) => send('POST', '/api/token-user', {
+  // Mode oauth: state sudah dicocokkan handleCallback; /oauth/token memeriksa secret dan redirect_uri.
+  const exchangeCode = (code, state) => (oauth ? send('POST', '/oauth/token', {
+    form: {
+      grant_type: 'authorization_code',
+      client_id: options.clientId,
+      client_secret: options.clientSecret,
+      redirect_uri: options.callbackUrl,
+      code,
+    },
+  }) : send('POST', '/api/token-user', {
     form: {
       state,
       grant_type: 'authorization_code',
@@ -146,7 +162,7 @@ function createPortalSso(options = {}) {
       client_id: options.clientId,
       client_secret: options.clientSecret,
     },
-  });
+  }));
   const get = (token, path) => send('GET', path, { token });
   const user = (token) => get(token, '/api/user');
   const verifyToken = (token) => get(token, '/api/verify-token');

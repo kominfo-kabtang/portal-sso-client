@@ -26,8 +26,14 @@ return [
     |
     | host        : alamat portal untuk panggilan server-ke-server (boleh IP internal).
     | host_domain : alamat portal untuk redirect browser (domain publik).
+    | mode        : "legacy" = lewat /request + /api/token-user (client milik pegawai).
+    |               "oauth"  = OAuth2 standar (/oauth/authorize + /oauth/token) memakai
+    |               client_id dan client_secret aplikasi dari menu admin portal. Callback
+    |               harus sama persis dengan URL callback yang didaftarkan di sana.
     |
     */
+
+    'mode' => env('SSO_MODE', 'legacy'),
 
     'host' => env('SSO_HOST'),
 

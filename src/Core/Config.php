@@ -7,13 +7,19 @@ namespace KominfoKabtang\PortalSso\Core;
  *
  * host        : alamat portal untuk panggilan server-ke-server (boleh IP internal).
  * host_domain : alamat portal untuk redirect browser (domain publik).
+ * mode        : "legacy" (bawaan, lewat /request + /api/token-user) atau "oauth"
+ *               (OAuth2 standar: /oauth/authorize + /oauth/token dengan client milik aplikasi).
  */
 class Config
 {
     /** @var array */
     private $values;
 
+    public const MODE_LEGACY = 'legacy';
+    public const MODE_OAUTH = 'oauth';
+
     private const DEFAULTS = [
+        'mode' => self::MODE_LEGACY,
         'host' => null,
         'host_domain' => null,
         'client_id' => null,
@@ -27,6 +33,7 @@ class Config
     ];
 
     private const ENV = [
+        'mode' => 'SSO_MODE',
         'host' => 'SSO_HOST',
         'host_domain' => 'SSO_HOST_DOMAIN',
         'client_id' => 'SSO_CLIENT_ID',
@@ -66,6 +73,19 @@ class Config
         }
 
         return new self(array_merge($values, $overrides));
+    }
+
+    /**
+     * Nilai selain "oauth" dianggap "legacy" agar aplikasi lama tidak berubah perilaku.
+     */
+    public function mode(): string
+    {
+        return strtolower(trim((string) $this->values['mode'])) === self::MODE_OAUTH ? self::MODE_OAUTH : self::MODE_LEGACY;
+    }
+
+    public function usesOauth(): bool
+    {
+        return $this->mode() === self::MODE_OAUTH;
     }
 
     public function host(): string

@@ -8,8 +8,9 @@ use KominfoKabtang\PortalSso\Core\Http\Transport;
 
 /**
  * Client HTTP ke Portal ASN (SSO server berbasis Laravel Passport).
- * Kontrak endpoint: /request, /api/token-user, /api/user, /api/cek-user,
- * /api/verify-token, /api/logmeout, /logout-api.
+ * Kontrak endpoint: /request dan /api/token-user (mode legacy) atau /oauth/authorize
+ * dan /oauth/token (mode oauth), lalu /api/user, /api/cek-user, /api/verify-token,
+ * /api/logmeout, /logout-api.
  */
 class PortalClient
 {
@@ -36,21 +37,32 @@ class PortalClient
 
     public function isConfigured(): bool
     {
-        return $this->config->host() !== '' && $this->config->hostDomain() !== '';
+        if ($this->config->host() === '' || $this->config->hostDomain() === '') {
+            return false;
+        }
+
+        // Mode oauth memakai client milik aplikasi, jadi keduanya wajib.
+        return !$this->config->usesOauth()
+            || ($this->config->clientId() !== null && $this->config->clientSecret() !== null);
     }
 
     public function authorizeUrl(string $state): string
     {
-        $query = http_build_query(self::filled([
+        $params = [
             'client_id' => $this->config->clientId(),
             'redirect_uri' => $this->config->callbackUrl(),
             'response_type' => 'code',
             'scope' => $this->config->scopes(),
             'state' => $state,
-            'prompt' => true,
-        ]));
+        ];
 
-        return $this->config->hostDomain() . '/request?' . $query;
+        if ($this->config->usesOauth()) {
+            return $this->config->hostDomain() . '/oauth/authorize?' . http_build_query(self::filled($params));
+        }
+
+        $params['prompt'] = true;
+
+        return $this->config->hostDomain() . '/request?' . http_build_query(self::filled($params));
     }
 
     /**
@@ -59,6 +71,17 @@ class PortalClient
      */
     public function exchangeCode(string $code, string $state): HttpResponse
     {
+        if ($this->config->usesOauth()) {
+            // State sudah dicocokkan SsoFlow; /oauth/token memeriksa client_secret dan redirect_uri.
+            return $this->send('POST', '/oauth/token', null, self::filled([
+                'grant_type' => 'authorization_code',
+                'client_id' => $this->config->clientId(),
+                'client_secret' => $this->config->clientSecret(),
+                'redirect_uri' => $this->config->callbackUrl(),
+                'code' => $code,
+            ]));
+        }
+
         return $this->send('POST', '/api/token-user', null, self::filled([
             'state' => $state,
             'grant_type' => 'authorization_code',

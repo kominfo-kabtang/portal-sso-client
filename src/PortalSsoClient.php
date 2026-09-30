@@ -56,6 +56,7 @@ class PortalSsoClient
     public function client(): PortalClient
     {
         $config = new Config([
+            'mode' => config('portal-sso.mode'),
             'host' => config('portal-sso.host'),
             'host_domain' => config('portal-sso.host_domain'),
             'client_id' => config('portal-sso.client_id'),

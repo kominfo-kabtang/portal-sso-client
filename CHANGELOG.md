@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 - 2026-09-30
+
+- Mode OAuth2 standar (`SSO_MODE=oauth`, opsi `mode` di npm): login lewat `/oauth/authorize` dan `/oauth/token` memakai client_id dan client_secret milik aplikasi dari admin portal. Mode bawaan tetap `legacy`, jadi aplikasi yang sudah terpasang tidak berubah perilaku.
+- Laravel: key baru `mode` di `config/portal-sso.php`. Aplikasi yang sudah mem-publish config perlu menambahkannya.
+
 ## 1.0.1 - 2026-09-29
 
 - Contoh integrasi CodeIgniter 2 (PHP 7.4+) di `examples/codeigniter2/`, termasuk adaptor session `Ci2SessionStore`, beserta panduannya di README.

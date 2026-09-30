@@ -1,4 +1,9 @@
 export interface PortalSsoOptions {
+  /**
+   * legacy (bawaan): lewat /request + /api/token-user.
+   * oauth: OAuth2 standar (/oauth/authorize + /oauth/token) dengan client milik aplikasi.
+   */
+  mode?: 'legacy' | 'oauth';
   /** Portal untuk panggilan server-ke-server (boleh IP internal). */
   host: string;
   /** Portal untuk redirect browser (domain publik). Default: host. */

@@ -101,6 +101,54 @@ test('callback turns portal failures into safe errors', async () => {
   }
 });
 
+test('oauth mode uses standard authorize url', () => {
+  const session = {};
+  const url = new URL(sso(fakeFetch({}), { mode: 'oauth' }).begin(session));
+
+  assert.equal(url.origin + url.pathname, 'https://portal.test/oauth/authorize');
+  assert.equal(url.searchParams.get('state'), session[STATE_KEY]);
+  assert.equal(url.searchParams.get('client_id'), '7');
+  assert.equal(url.searchParams.get('redirect_uri'), 'https://app.test/callback');
+  assert.equal(url.searchParams.get('prompt'), null);
+});
+
+test('oauth mode requires client credentials', () => {
+  assert.equal(sso(fakeFetch({}), { mode: 'oauth', clientSecret: '' }).isConfigured(), false);
+  assert.equal(sso(fakeFetch({}), { mode: 'oauth', clientId: '' }).isConfigured(), false);
+  assert.equal(sso(fakeFetch({}), { clientId: '', clientSecret: '' }).isConfigured(), true);
+});
+
+test('oauth mode exchanges code at token endpoint', async () => {
+  const fetch = fakeFetch({
+    '/oauth/token': [200, { token_type: 'Bearer', access_token: 'tok-9' }],
+    '/api/user': [200, { nip: '199001012020121001' }],
+  });
+
+  const login = await sso(fetch, { mode: 'OAuth' }).handleCallback({ [STATE_KEY]: 'st' }, { code: 'abc', state: 'st' });
+
+  assert.equal(login.token, 'tok-9');
+  const [exchange, user] = fetch.sent;
+  assert.equal(exchange.url, 'http://10.0.0.1/oauth/token');
+  assert.deepEqual(exchange.form, {
+    grant_type: 'authorization_code',
+    client_id: '7',
+    client_secret: 'rahasia',
+    redirect_uri: 'https://app.test/callback',
+    code: 'abc',
+  });
+  assert.equal(user.headers.Authorization, 'Bearer tok-9');
+});
+
+test('oauth mode rejected code is safe error', async () => {
+  const client = sso(fakeFetch({ '/oauth/token': [401, { error: 'invalid_client' }] }), { mode: 'oauth' });
+  await rejectsWith(client.handleCallback({ [STATE_KEY]: 'st' }, { code: 'abc', state: 'st' }), MESSAGES.EXCHANGE_FAILED, { http_status: 401 });
+});
+
+test('unknown mode falls back to legacy', () => {
+  const url = new URL(sso(fakeFetch({}), { mode: 'lain' }).begin({}));
+  assert.equal(url.pathname, '/request');
+});
+
 test('callback requires nip', async () => {
   const fetch = fakeFetch({
     '/api/token-user': [200, { access_token: 'tok' }],
@@ -142,7 +190,7 @@ test('logout revokes token and returns portal url even when portal is down', asy
 });
 
 test('configFromEnv reads SSO_* variables', () => {
-  const config = configFromEnv({ SSO_HOST: 'http://env-host', SSO_TIMEOUT: '3' }, { callbackUrl: 'https://app.test/callback' });
-  assert.deepEqual(config, { host: 'http://env-host', timeoutMs: 3000, callbackUrl: 'https://app.test/callback' });
+  const config = configFromEnv({ SSO_MODE: 'oauth', SSO_HOST: 'http://env-host', SSO_TIMEOUT: '3' }, { callbackUrl: 'https://app.test/callback' });
+  assert.deepEqual(config, { mode: 'oauth', host: 'http://env-host', timeoutMs: 3000, callbackUrl: 'https://app.test/callback' });
   assert.equal(sso(undefined, { ...config, hostDomain: undefined }).logoutUrl(), 'http://env-host/logout-api');
 });

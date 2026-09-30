@@ -48,9 +48,29 @@ SSO_CLIENT_SECRET=
 # Opsional. Default: {APP_URL}/callback
 SSO_CLIENT_CALLBACK=
 SSO_SCOPES=view-user
+# legacy (bawaan) atau oauth, lihat "Mode OAuth2 standar" di bawah
+SSO_MODE=legacy
 ```
 
 Jangan commit `SSO_CLIENT_SECRET`. Paket tidak pernah mencatat secret, code, atau token ke log.
+
+### Mode OAuth2 standar
+
+Secara bawaan (`SSO_MODE=legacy`), alur B lewat portal `/request` dan penukaran code di `/api/token-user`. Bila admin portal sudah membuatkan **client SSO untuk aplikasi** (menu Admin → Aplikasi → Edit → Login SSO), pakai mode `oauth`:
+
+```dotenv
+SSO_MODE=oauth
+SSO_CLIENT_ID=<client id aplikasi dari admin portal>
+SSO_CLIENT_SECRET=<client secret aplikasi, hanya ditampilkan sekali>
+SSO_CLIENT_CALLBACK=https://aplikasi.example/callback
+```
+
+Pada mode ini aplikasi langsung ke `/oauth/authorize` lalu menukar code di `/oauth/token` dengan secret miliknya sendiri. Alur A (tile portal) dan logout tidak berubah.
+
+- `SSO_CLIENT_CALLBACK` harus **sama persis** dengan salah satu URL callback yang didaftarkan di admin portal (skema, host, port, dan path). Bila berbeda, portal menolak login.
+- `SSO_CLIENT_ID` dan `SSO_CLIENT_SECRET` wajib. Bila kosong, SSO dianggap belum dikonfigurasi.
+- Nilai selain `oauth` diperlakukan sebagai `legacy`.
+- Aplikasi Laravel yang sudah mem-publish `config/portal-sso.php` perlu menambahkan `'mode' => env('SSO_MODE', 'legacy'),`.
 
 ---
 

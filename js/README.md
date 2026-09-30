@@ -49,6 +49,7 @@ Contoh lengkap Express + express-session ada di [`examples/express.js`](examples
 
 | Opsi | Default | Keterangan |
 |---|---|---|
+| `mode` | `legacy` | `oauth` untuk OAuth2 standar dengan client milik aplikasi (lihat README utama) |
 | `host` | — | Portal untuk panggilan server (boleh IP internal) |
 | `hostDomain` | `host` | Portal untuk redirect browser |
 | `clientId`, `clientSecret` | — | OAuth client dari portal |

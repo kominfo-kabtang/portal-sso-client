@@ -131,6 +131,75 @@ class SsoFlowTest extends TestCase
         $this->assertSame('Bearer tok-123', $transport->sent[1]['headers']['Authorization']);
     }
 
+    public function test_oauth_mode_uses_standard_authorize_url(): void
+    {
+        $url = $this->flow(new FakeTransport(), ['mode' => 'oauth'])->begin();
+
+        $this->assertStringStartsWith('https://portal.test/oauth/authorize?', $url);
+        parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+        $this->assertSame($this->session->get(SsoFlow::STATE_KEY), $query['state']);
+        $this->assertSame('7', $query['client_id']);
+        $this->assertSame('https://app.test/callback', $query['redirect_uri']);
+        $this->assertSame('code', $query['response_type']);
+        $this->assertSame('view-user', $query['scope']);
+        $this->assertArrayNotHasKey('prompt', $query);
+    }
+
+    public function test_oauth_mode_requires_client_credentials(): void
+    {
+        foreach (['client_id', 'client_secret'] as $missing) {
+            try {
+                $this->flow(new FakeTransport(), ['mode' => 'oauth', $missing => ''])->begin();
+                $this->fail($missing);
+            } catch (SsoException $e) {
+                $this->assertSame(SsoException::NOT_CONFIGURED, $e->getMessage(), $missing);
+            }
+        }
+    }
+
+    public function test_oauth_mode_exchanges_code_at_token_endpoint(): void
+    {
+        $transport = new FakeTransport([
+            '/oauth/token' => FakeTransport::json(['access_token' => 'tok-oauth', 'refresh_token' => 'r']),
+            '/api/user' => FakeTransport::json(['nip' => '199001012020121001']),
+        ]);
+        $this->session->put(SsoFlow::STATE_KEY, 'st');
+
+        $login = $this->flow($transport, ['mode' => 'OAuth'])->handleCallback(['code' => 'abc', 'state' => 'st']);
+
+        $this->assertSame('tok-oauth', $login->token);
+        $exchange = $transport->sent[0];
+        $this->assertSame('http://10.0.0.1/oauth/token', $exchange['url']);
+        $this->assertSame([
+            'grant_type' => 'authorization_code',
+            'client_id' => '7',
+            'client_secret' => 'rahasia',
+            'redirect_uri' => 'https://app.test/callback',
+            'code' => 'abc',
+        ], $exchange['form']);
+    }
+
+    public function test_oauth_mode_rejected_code_is_safe_exception(): void
+    {
+        $this->session->put(SsoFlow::STATE_KEY, 'st');
+
+        try {
+            $this->flow(new FakeTransport(['/oauth/token' => FakeTransport::json(['error' => 'invalid_client'], 401)]), ['mode' => 'oauth'])
+                ->handleCallback(['code' => 'abc', 'state' => 'st']);
+            $this->fail('harus gagal');
+        } catch (SsoException $e) {
+            $this->assertSame(SsoException::EXCHANGE_FAILED, $e->getMessage());
+            $this->assertSame(['http_status' => 401], $e->context());
+        }
+    }
+
+    public function test_unknown_mode_falls_back_to_legacy(): void
+    {
+        $this->assertSame(Config::MODE_LEGACY, (new Config(['mode' => 'standar']))->mode());
+        $this->assertSame(Config::MODE_LEGACY, (new Config([]))->mode());
+        $this->assertSame(Config::MODE_OAUTH, (new Config(['mode' => ' oauth ']))->mode());
+    }
+
     public function test_callback_turns_portal_errors_into_safe_exception(): void
     {
         $cases = [
@@ -223,6 +292,7 @@ class SsoFlowTest extends TestCase
     {
         putenv('SSO_HOST=http://env-host');
         putenv('SSO_VERIFY_SSL=false');
+        putenv('SSO_MODE=oauth');
 
         try {
             $config = Config::fromEnv(['callback_url' => 'https://app.test/callback']);
@@ -231,9 +301,11 @@ class SsoFlowTest extends TestCase
             $this->assertSame('http://env-host', $config->hostDomain());
             $this->assertFalse($config->verifySsl());
             $this->assertSame('https://app.test/callback', $config->callbackUrl());
+            $this->assertTrue($config->usesOauth());
         } finally {
             putenv('SSO_HOST');
             putenv('SSO_VERIFY_SSL');
+            putenv('SSO_MODE');
         }
     }
 }
