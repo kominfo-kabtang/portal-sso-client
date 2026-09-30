@@ -15,6 +15,8 @@ Client login SSO **Portal ASN Kabupaten Tangerang** (Laravel Passport). Pasang d
 | Node.js (Express, Fastify, Next.js, NestJS) | `npm i @kominfo-kabtang/portal-sso-client` | [js/README.md](js/README.md) |
 | SPA (Vue, React) | Lewat backend | [SPA](#aplikasi-spa-vue-react) |
 
+Baru memasang atau memindahkan aplikasi ke mode OAuth2? Ikuti [panduan integrasi langkah demi langkah](INTEGRASI.md).
+
 Semua versi PHP memerlukan **PHP 7.4 ke atas**. Di luar Laravel, paket ini hanya menarik `guzzlehttp/guzzle` dan tidak memasang komponen Laravel.
 
 ## Alur yang didukung
@@ -244,7 +246,7 @@ $flow->logout($token);                  // cabut token; URL logout portal atau n
 
 `PortalLogin` berisi `$user` (data portal, minimal `nip`), `$token`, `$flow`, dan method `nip()`. Semua kegagalan, termasuk portal yang tidak terjangkau, dilempar sebagai `SsoException`. Pesan `getMessage()` aman ditampilkan ke user, dan `context()` bisa dicatat ke log.
 
-Config bisa diisi dari array (`new Config([...])`) atau dari environment `SSO_*` (`Config::fromEnv()`). Key-nya `host`, `host_domain`, `client_id`, `client_secret`, `callback_url`, `scopes`, `timeout`, `connect_timeout`, `logout_timeout`, dan `verify_ssl`.
+Config bisa diisi dari array (`new Config([...])`) atau dari environment `SSO_*` (`Config::fromEnv()`). Key-nya `mode`, `host`, `host_domain`, `client_id`, `client_secret`, `callback_url`, `scopes`, `timeout`, `connect_timeout`, `logout_timeout`, dan `verify_ssl`.
 
 ### CodeIgniter 4
 

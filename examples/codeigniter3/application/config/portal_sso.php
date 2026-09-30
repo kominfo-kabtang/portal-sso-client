@@ -9,8 +9,11 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | host        : alamat portal untuk panggilan server-ke-server (boleh IP internal)
 | host_domain : alamat portal untuk redirect browser (domain publik)
 | callback_url: harus sama dengan redirect URI OAuth client di portal
+| mode        : "legacy" (bawaan) atau "oauth" (client milik aplikasi dari admin portal,
+|               lihat README bagian "Mode OAuth2 standar")
 */
 $config['portal_sso'] = array(
+    'mode' => getenv('SSO_MODE') ?: 'legacy',
     'host' => getenv('SSO_HOST') ?: '',
     'host_domain' => getenv('SSO_HOST_DOMAIN') ?: 'https://portal-asn.tangerangkab.go.id',
     'client_id' => getenv('SSO_CLIENT_ID') ?: '',

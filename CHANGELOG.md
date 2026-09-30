@@ -1,5 +1,10 @@
 # Changelog
 
+## Belum dirilis
+
+- Panduan integrasi langkah demi langkah di `INTEGRASI.md`.
+- Contoh config CodeIgniter 2/3 membaca `SSO_MODE`.
+
 ## 1.1.0 - 2026-09-30
 
 - Mode OAuth2 standar (`SSO_MODE=oauth`, opsi `mode` di npm): login lewat `/oauth/authorize` dan `/oauth/token` memakai client_id dan client_secret milik aplikasi dari admin portal. Mode bawaan tetap `legacy`, jadi aplikasi yang sudah terpasang tidak berubah perilaku.
